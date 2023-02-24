@@ -10,18 +10,21 @@ parser$add_argument("-t", "--type",required = F, default="ext")
 parser$add_argument("-g", "--genome",required = F, default=NULL)
 parser$add_argument("-f", "--filter",required = F, default = NULL)
 parser$add_argument("-j", "--json", required = F, default = NULL)
-parser$add_argument("-r", "--recursive",required = F, action = "store_true", default = T)
+parser$add_argument("-r", "--recursive",required = F, action = "store_true", default = F)
 parser$add_argument("--strip", required = F, action = "store_true", default = F)
+parser$add_argument("--glob", required = F, default =  NULL, nargs='+')
+parser$add_argument("--prefix", required = F, default =  NULL)
+parser$add_argument("--group", required = F, default =  NULL)
 
 args <- parser$parse_args()
 
 # args <- parser$parse_args(c("-t", "bigwig", "-f", "WangT.*"))
 
-json.gen.dir <- function(dir, type, filter.exp = NULL, genome = NULL,
-  recursive = F, strip.dir = F, debug = F, json.name = NULL) {
+json.gen.dir <- function(dir, files = NULL, glob, type, filter.exp = NULL, genome = NULL,
+  recursive = F, strip.dir = F, prefix = NULL, debug = F, json.name = NULL, group = NULL) {
   #files <- Sys.glob(paste0(dir, "/*")) %>% basename()
-
-  files <- list.files(dir, recursive = recursive)
+  if (is.null(files))
+    files <- list.files(dir, recursive = recursive)
 
   files <- files[!grepl(".json", files)] %>% .[!grepl(".tbi$", .)]
   if (!is.null(filter.exp))
@@ -42,11 +45,22 @@ json.gen.dir <- function(dir, type, filter.exp = NULL, genome = NULL,
     if (strip.dir == T) {
       x <- basename(x) 
     }
+    if (!is.null(prefix))
+      x <- paste0(prefix, "..", x)
     json.sub <- list(name = x,
                 url = url,
                 type = type)
+    if (type == "genomealign") {
+      print("paring query genome from file name")
+      query.genome <- x %>% stringr::str_extract("[0-9A-Za-z]+.align") %>% 
+      sub(".align", "", .)
+      json.sub$querygenome <- query.genome
+    }
     if (!is.null(genome)) {
       json.sub$metadata <- list(genome = genome)
+    }
+    if (!is.null(group)) {
+      json.sub$options <- list(group = as.numeric(group))
     }
     return(json.sub)
   })
@@ -64,9 +78,11 @@ json.gen.dir <- function(dir, type, filter.exp = NULL, genome = NULL,
 
 get.type <- function(x) {
   lookup <- c(bw = "bigwig", bigwig = "bigwig", bigWig = "bigwig", 
-    bdg = "bedgraph", bedgraph = "bedgraph",
-    bed = "bed", bam = "bam", lr = "longrange", cat = "categorical",
-    hic = "hic", cool = "cool", qbed= "qbed")
+    bdg = "bedgraph", bedgraph = "bedgraph", bedGraph = "bedgraph", bg = "bedgraph",
+    methylC = "methylC",
+    bed = "bed", narrowPeak = "bed",  bam = "bam", lr = "longrange", cat = "categorical",
+    hic = "hic", cool = "cool", qbed= "qbed",
+    align = "genomealign", genomeAlign = "genomealign")
   ext <- sub(".gz$","",basename(x)) %>% tools::file_ext()
   type <- lookup[ext]
   if (sum(is.na(type)) != 0) {
@@ -75,6 +91,7 @@ get.type <- function(x) {
   return(type)
 }
 
-json.gen.dir(dir = args$dir, type = args$type, filter.exp = args$filter, json.name = args$json,
+json.gen.dir(dir = args$dir, files = args$glob, prefix = args$prefix,
+  type = args$type, filter.exp = args$filter, json.name = args$json,
   genome = args$genome,
-  recursive = args$recursive, strip.dir = args$strip)
+  recursive = args$recursive, strip.dir = args$strip, group = args$group)

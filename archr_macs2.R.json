@@ -1,0 +1,9 @@
+[
+    {
+        "name": "archr_macs2.R",
+        "type": "bam_subsample.R",
+        "url": "https://wangftp.wustl.edu/~cfan/R_for_bash/archr_macs2.R",
+        "querygenome": "bam2bw.R"
+    }
+]
+
