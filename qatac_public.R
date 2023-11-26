@@ -62,7 +62,7 @@ qatacview.jsongen <- function(tsv, add.to, out.json=NULL, replace=F, force = F) 
     stop(paste0(add.to, " does not exist"))
   }
   
-  df <- read.table(tsv, header = T, as.is = T, sep="\t")
+  df <- suppressWarnings(read.table(tsv, header = T, as.is = T, sep="\t"))
   fields <- c("collection", "pipedir", "samples")
   not_found <- fields[!fields %in% colnames(df)]
   if (length(not_found) > 0) {
