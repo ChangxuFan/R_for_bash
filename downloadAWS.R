@@ -1,4 +1,5 @@
 #!/opt/apps/R/3.6.1/bin/Rscript
+# fields: lab	gsm	sample	assayType
 suppressMessages(library(downloadSRX))
 suppressMessages(library("argparse"))
 options(stringsAsFactors = F)
