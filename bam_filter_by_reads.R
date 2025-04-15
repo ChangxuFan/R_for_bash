@@ -1,4 +1,4 @@
-#!/opt/apps/R/3.6.1/bin/Rscript
+#!/opt/apps/R/4.4.1/bin/Rscript
 options(stringsAsFactors = F)
 options(scipen = 20)
 suppressMessages(library(dplyr))
@@ -11,12 +11,16 @@ parser <- argparse::ArgumentParser(add_help = T)
 parser$add_argument("-b", "--bam", required = T)
 parser$add_argument("-o", "--out.bam", required = F, default=NULL)
 parser$add_argument("-r", "--valid.reads", required = T)
+parser$add_argument("-v", "--inverse", required = F, action = "store_true", default = F)
 
 args <- parser$parse_args()
 
 bam.filter.mqa <- function(bam, out.bam = NULL, valid.reads) {
   reads <- readLines(valid.reads) %>% unique()
-  filter <- function(x) x$qname %in% reads
+  if (args$inverse)
+    filter <- function(x) !(x$qname %in% reads)
+  else
+    filter <- function(x) x$qname %in% reads
   filters <- list(name.filter = filter)
   if (is.null(out.bam))
     out.bam <- sub(".bam", "_mqa.bam", bam)
